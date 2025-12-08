@@ -484,25 +484,29 @@ const AppContent = () => {
   const handleDeleteAccount = () => {
       if (!user) return;
       
-      // 3. Backend Logic: Admin Block
+      // Requirement: Admin Must NOT See Delete Account Button (Backend block)
       if (user.email === ADMIN_EMAIL || user.role === 'admin') {
           alert("Admin account cannot be deleted.");
           return;
       }
 
       try {
-          // 4. Database Consistency
+          // Requirement: Database Consistency (Cascade Delete)
           setRegisteredUsers(prev => prev.filter(u => u.id !== user.id));
-          setMessages(prev => prev.filter(m => m.senderId !== user.id));
-          setSiteReviews(prev => prev.filter(r => r.userId !== user.id));
+          setMessages(prev => prev.filter(m => m.senderId !== user.id)); // Remove messages sent by user
+          setSiteReviews(prev => prev.filter(r => r.userId !== user.id)); // Remove reviews by user
           
-          // Clear session and redirect to Login
+          // Requirement: Clear all saved session data and Log the user out
           setUser(null);
           localStorage.removeItem('currentUser');
+          
+          // Requirement: Redirect user to the Login Page
           navigate('/login');
           
+          // Feedback
           alert("Your account has been deleted successfully.");
       } catch (error) {
+          // Requirement: Error Handling
           console.error("Deletion Error:", error);
           alert("Error deleting account. Please try again.");
       }
@@ -530,14 +534,14 @@ const AppContent = () => {
             city: checkoutData.city,
             zip_code: checkoutData.zip,
             product_name: service.title,
-            total_amount: service.price,
+            total_amount: Number(service.price), // Ensure number type
             status: 'active'
         }])
         .select();
 
       if (error) {
-        console.error('Supabase Order Error:', error);
-        alert('Failed to process order in database. Please try again.');
+        console.error('Supabase Order Error:', JSON.stringify(error, null, 2));
+        alert(`Order Failed: ${error.message || 'Unknown error. Check console.'}`);
         return;
       }
       

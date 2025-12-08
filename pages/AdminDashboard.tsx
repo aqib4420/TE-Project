@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   BarChart, Users, ShoppingBag, DollarSign, Settings, 
@@ -45,17 +46,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isEditingService, setIsEditingService] = useState<Service | null>(null);
   const [isAddingService, setIsAddingService] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [deliveryFile, setDeliveryFile] = useState<File | null>(null); // State for file upload
   
   // Messages State
   const [selectedChatUser, setSelectedChatUser] = useState<User | null>(null);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // Search State for Orders
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
 
   // Settings State
   const [tempAppName, setTempAppName] = useState(appName);
   
   // Initialize color states from localStorage to ensure Hex format for input[type="color"]
-  // Computed styles often return rgb() which breaks the input.
   const [primaryColor, setPrimaryColor] = useState(localStorage.getItem('primaryColor') || '#3b82f6');
   const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem('secondaryColor') || '#8b5cf6');
   const [borderColor, setBorderColor] = useState(localStorage.getItem('borderColor') || '#e5e7eb');
@@ -65,6 +69,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     setTempAppName(appName);
   }, [appName]);
+
+  // Reset delivery file when selected order changes
+  useEffect(() => {
+    if (selectedOrder) {
+        setDeliveryFile(null);
+    }
+  }, [selectedOrder]);
 
   // Stats Calculation
   const totalRevenue = orders.reduce((acc, order) => acc + order.price, 0);
@@ -81,6 +92,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     deliveryTime: '',
     image: 'https://picsum.photos/seed/new/800/600',
     features: []
+  });
+
+  // Filter Orders Logic
+  const filteredOrders = orders.filter(order => {
+    const searchLower = orderSearchTerm.toLowerCase();
+    return (
+      order.id.toLowerCase().includes(searchLower) ||
+      order.serviceTitle.toLowerCase().includes(searchLower) ||
+      (order.clientName && order.clientName.toLowerCase().includes(searchLower)) ||
+      order.status.toLowerCase().includes(searchLower)
+    );
   });
 
   // Group messages by user to show chat list
@@ -131,7 +153,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const adjustColor = (color: string, amount: number) => {
-    // Basic hex adjustment (could be robustified)
     if (!color.startsWith('#')) return color;
     return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
   }
@@ -192,7 +213,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <ShoppingBag className="w-5 h-5" /> Orders
           </button>
           
-          {/* Messages Link with Notification Badge */}
+          {/* Messages Link with Real-time Notification Badge */}
           <button onClick={() => setActiveTab('messages')} className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'messages' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <div className="flex items-center gap-3">
               <MessageSquare className="w-5 h-5" /> Messages
@@ -336,66 +357,90 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Orders Tab */}
             {activeTab === 'orders' && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 dark:bg-gray-700/50">
-                            <tr>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Order ID</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Service</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Amount</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {orders.map(order => (
-                            <tr 
-                                key={order.id} 
-                                className="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition-colors"
-                                onClick={() => setSelectedOrder(order)}
-                            >
-                                <td className="px-6 py-4 text-sm text-gray-500 font-mono">#{order.id.slice(-6)}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{order.serviceTitle}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${order.price}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                                        order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                        order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                        'bg-blue-100 text-blue-700'
-                                    }`}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <button 
-                                        title="Mark Completed"
-                                        onClick={(e) => { e.stopPropagation(); onUpdateOrder(order.id, 'completed', 'http://files.com/delivery.zip'); }}
-                                        className="p-1.5 text-green-600 hover:bg-green-50 rounded"
-                                        >
-                                        <CheckCircle className="w-5 h-5" />
-                                        </button>
-                                        <button 
-                                        title="Cancel Order"
-                                        onClick={(e) => { e.stopPropagation(); onUpdateOrder(order.id, 'cancelled'); }}
-                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                        >
-                                        <XCircle className="w-5 h-5" />
-                                        </button>
-                                        <button 
-                                        title="Upload Files"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                                        >
-                                        <Upload className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            <div className="space-y-4">
+                {/* Search Bar */}
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input 
+                            type="text" 
+                            placeholder="Search by ID, Service, Client, or Status..." 
+                            value={orderSearchTerm}
+                            onChange={(e) => setOrderSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-premium-royal outline-none"
+                        />
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 dark:bg-gray-700/50">
+                                <tr>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Order ID</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Service</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Client</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Amount</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {filteredOrders.length > 0 ? filteredOrders.map(order => (
+                                <tr 
+                                    key={order.id} 
+                                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition-colors"
+                                    onClick={() => setSelectedOrder(order)}
+                                >
+                                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">#{order.id.slice(-6)}</td>
+                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{order.serviceTitle}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{order.clientName || 'Unknown'}</td>
+                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">${order.price}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                                            order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                            order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                            'bg-blue-100 text-blue-700'
+                                        }`}>
+                                            {order.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                            title="Mark Completed"
+                                            onClick={(e) => { e.stopPropagation(); onUpdateOrder(order.id, 'completed', 'http://files.com/delivery.zip'); }}
+                                            className="p-1.5 text-green-600 hover:bg-green-50 rounded"
+                                            >
+                                            <CheckCircle className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                            title="Cancel Order"
+                                            onClick={(e) => { e.stopPropagation(); onUpdateOrder(order.id, 'cancelled'); }}
+                                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                            >
+                                            <XCircle className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                            title="Upload Files"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                            >
+                                            <Upload className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                            No orders found matching "{orderSearchTerm}"
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             )}
@@ -740,16 +785,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </div>
                     </div>
 
-                    {/* Deliverables */}
-                    {selectedOrder.deliverables && (
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">Deliverables</p>
-                            <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg">
-                                <FileText className="w-5 h-5" />
-                                <span className="text-sm font-medium truncate">{selectedOrder.deliverables}</span>
-                            </div>
+                    {/* Deliverables Upload Section */}
+                    <div className="p-4 border border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700/30">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Attach Delivery Files</h4>
+                        <div className="flex items-center gap-4">
+                            <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm">
+                                <Upload className="w-4 h-4 text-premium-royal" /> 
+                                {deliveryFile ? 'Replace File' : 'Upload File'}
+                                <input 
+                                    type="file" 
+                                    className="hidden"
+                                    onChange={(e) => e.target.files && setDeliveryFile(e.target.files[0])}
+                                />
+                            </label>
+                            {deliveryFile ? (
+                                <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300">
+                                    <FileText className="w-4 h-4 text-gray-400" />
+                                    <span className="truncate max-w-[150px]">{deliveryFile.name}</span>
+                                    <button onClick={() => setDeliveryFile(null)} className="ml-1 text-gray-400 hover:text-red-500">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <span className="text-sm text-gray-400 italic">No file selected</span>
+                            )}
                         </div>
-                    )}
+                        {selectedOrder.deliverables && !deliveryFile && (
+                            <div className="mt-3 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg inline-flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4" /> Files already delivered
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Modal Footer (Actions) */}
@@ -761,10 +827,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         Cancel Order
                      </button>
                      <button 
-                        onClick={() => { onUpdateOrder(selectedOrder.id, 'completed', 'http://files.com/delivery.zip'); setSelectedOrder(null); }}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-full font-medium transition-colors shadow-lg shadow-green-500/20"
+                        onClick={() => { 
+                             // Use simulated URL if file selected, otherwise keep existing
+                             const fileUrl = deliveryFile 
+                                ? `https://storage.myapp.com/deliveries/${Date.now()}_${deliveryFile.name}` 
+                                : selectedOrder.deliverables;
+                             
+                             onUpdateOrder(selectedOrder.id, 'completed', fileUrl); 
+                             setSelectedOrder(null); 
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-full font-medium transition-colors shadow-lg shadow-green-500/20 flex items-center gap-2"
                      >
-                        Mark Completed
+                        <CheckCircle className="w-4 h-4" />
+                        Mark Completed & Send
                      </button>
                 </div>
             </div>

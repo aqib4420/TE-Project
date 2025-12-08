@@ -18,6 +18,7 @@ export const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdateProfil
   const [isSaving, setIsSaving] = useState(false);
   
   // Admin Check to Hide Button
+  // Requirement: Admin Must NOT See Delete Account Button
   const isAdmin = user.role === 'admin' || user.email === 'admin@myapp.com';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,7 +37,7 @@ export const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdateProfil
   };
 
   const handleDelete = () => {
-      // 1. User Confirmation Popup
+      // Requirement: Show a confirmation popup
       const confirm = window.confirm("Are you sure you want to delete your account?");
       if (confirm) {
           onDeleteAccount();
@@ -146,7 +147,7 @@ export const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdateProfil
                         </div>
 
                         <div className="flex items-center justify-between pt-6">
-                            {/* 2. Admin Must NOT See Delete Account Button */}
+                            {/* Requirement: Admin Must NOT See Delete Account Button */}
                             {!isAdmin && (
                                 <button
                                     type="button"
