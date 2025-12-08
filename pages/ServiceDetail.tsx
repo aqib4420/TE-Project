@@ -1,19 +1,31 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Clock, Check, ShieldCheck, ChevronLeft } from 'lucide-react';
+import { Star, Clock, Check, ShieldCheck, ChevronLeft, CreditCard, X } from 'lucide-react';
 import { MOCK_SERVICES } from '../constants';
-import { User } from '../types';
+import { User, CheckoutData } from '../types';
 
 interface ServiceDetailProps {
   user: User | null;
-  onOrder: (serviceId: string) => void;
+  onOrder: (serviceId: string, checkoutData: CheckoutData) => void;
 }
 
 export const ServiceDetail: React.FC<ServiceDetailProps> = ({ user, onOrder }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isOrdering, setIsOrdering] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
+  // Checkout Form State
+  const [checkoutForm, setCheckoutForm] = useState<CheckoutData>({
+    firstName: user?.name?.split(' ')[0] || '',
+    lastName: user?.name?.split(' ')[1] || '',
+    email: user?.email || '',
+    address: '',
+    city: '',
+    zip: ''
+  });
+
   const service = MOCK_SERVICES.find(s => s.id === id);
 
   if (!service) {
@@ -25,14 +37,24 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({ user, onOrder }) =
       navigate('/login');
       return;
     }
+    setShowCheckout(true);
+  };
+
+  const handleCheckoutSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
     
-    setIsOrdering(true);
-    // Simulate payment processing
+    // Simulate payment processing delay
     setTimeout(() => {
-      onOrder(service.id);
-      setIsOrdering(false);
+      onOrder(service.id, checkoutForm);
+      setIsProcessing(false);
+      setShowCheckout(false);
       navigate('/dashboard');
     }, 2000);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCheckoutForm({ ...checkoutForm, [e.target.name]: e.target.value });
   };
 
   return (
@@ -120,10 +142,9 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({ user, onOrder }) =
 
             <button
               onClick={handleOrderClick}
-              disabled={isOrdering}
-              className="w-full bg-primary-600 text-white font-bold py-4 rounded-xl hover:bg-primary-700 transition-all transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg hover:shadow-primary-500/25 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-premium-royal to-premium-indigo text-white font-bold py-4 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
             >
-              {isOrdering ? 'Processing...' : 'Continue to Order'}
+              <CreditCard className="w-5 h-5" /> Continue to Checkout
             </button>
             
             <div className="mt-4 text-center">
@@ -138,13 +159,121 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({ user, onOrder }) =
         </div>
       </div>
       
-      {/* Fake Payment Modal Overlay */}
-      {isOrdering && (
-         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-theme-card p-8 rounded-2xl max-w-sm w-full text-center border border-theme-border shadow-2xl">
-               <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
-               <h3 className="text-lg font-bold text-theme-text mb-2">Processing Payment...</h3>
-               <p className="text-theme-muted text-sm">Please wait while we secure your order.</p>
+      {/* Checkout Modal */}
+      {showCheckout && (
+         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+            <div className="bg-theme-card p-8 rounded-3xl max-w-lg w-full border border-theme-border shadow-2xl relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
+               <button 
+                  onClick={() => setShowCheckout(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+               >
+                  <X className="w-6 h-6" />
+               </button>
+
+               {isProcessing ? (
+                  <div className="text-center py-12">
+                     <div className="w-20 h-20 border-4 border-primary-100 border-t-premium-royal rounded-full animate-spin mx-auto mb-6"></div>
+                     <h3 className="text-xl font-bold text-theme-text mb-2">Processing Payment...</h3>
+                     <p className="text-theme-muted">Please do not close this window.</p>
+                  </div>
+               ) : (
+                  <>
+                    <h2 className="text-2xl font-bold text-theme-text mb-6 flex items-center gap-2">
+                       <CreditCard className="w-6 h-6 text-premium-royal" /> Secure Checkout
+                    </h2>
+                    
+                    <form onSubmit={handleCheckoutSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-theme-text mb-1.5">First Name</label>
+                                <input 
+                                  type="text" 
+                                  name="firstName"
+                                  required
+                                  value={checkoutForm.firstName}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 rounded-xl border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-theme-text mb-1.5">Last Name</label>
+                                <input 
+                                  type="text" 
+                                  name="lastName"
+                                  required
+                                  value={checkoutForm.lastName}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 rounded-xl border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-theme-text mb-1.5">Email Address</label>
+                            <input 
+                              type="email" 
+                              name="email"
+                              required
+                              value={checkoutForm.email}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-2.5 rounded-xl border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-theme-text mb-1.5">Street Address</label>
+                            <input 
+                              type="text" 
+                              name="address"
+                              required
+                              placeholder="123 Main St"
+                              value={checkoutForm.address}
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-2.5 rounded-xl border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-theme-text mb-1.5">City</label>
+                                <input 
+                                  type="text" 
+                                  name="city"
+                                  required
+                                  value={checkoutForm.city}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 rounded-xl border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-theme-text mb-1.5">Zip Code</label>
+                                <input 
+                                  type="text" 
+                                  name="zip"
+                                  required
+                                  value={checkoutForm.zip}
+                                  onChange={handleInputChange}
+                                  className="w-full px-4 py-2.5 rounded-xl border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-theme-border mt-4">
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="text-theme-muted">Total Amount</span>
+                                <span className="text-2xl font-bold text-theme-text">${service.price}</span>
+                            </div>
+                            
+                            <button 
+                                type="submit" 
+                                className="w-full bg-gradient-to-r from-premium-royal to-premium-indigo text-white font-bold py-3.5 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all shadow-lg text-lg"
+                            >
+                                Pay Now
+                            </button>
+                        </div>
+                    </form>
+                  </>
+               )}
             </div>
          </div>
       )}

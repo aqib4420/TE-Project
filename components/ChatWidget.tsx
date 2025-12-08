@@ -110,7 +110,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
       {isOpen && (
         <div className="mb-4 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-[500px] transition-all duration-300 ease-in-out transform origin-bottom-right">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary-600 to-secondary-600 p-4 flex justify-between items-center text-white">
+          <div className="bg-gradient-to-r from-premium-royal to-premium-indigo p-4 flex justify-between items-center text-white">
             <div className="flex items-center gap-3">
               {isClient ? (
                  <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${
                             isMe
-                                ? 'bg-primary-600 text-white rounded-br-none' 
+                                ? 'bg-premium-royal text-white rounded-br-none' 
                                 : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700 rounded-bl-none'
                             }`}>
                             {msg.attachment && (
@@ -173,7 +173,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
                                       : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                                   }`}
                                 >
-                                    <div className={`p-2 rounded-lg ${isMe ? 'bg-white/20' : 'bg-white dark:bg-gray-800 text-primary-600'}`}>
+                                    <div className={`p-2 rounded-lg ${isMe ? 'bg-white/20' : 'bg-white dark:bg-gray-800 text-premium-royal'}`}>
                                         <File className="w-5 h-5" />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -199,7 +199,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${
                     msg.role === 'user' 
-                      ? 'bg-primary-600 text-white rounded-br-none' 
+                      ? 'bg-premium-royal text-white rounded-br-none' 
                       : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700 rounded-bl-none'
                   }`}>
                     <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -228,7 +228,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
                 <button 
                   onClick={handleAttachFile}
                   title="Attach File"
-                  className="p-2.5 text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  className="p-2.5 text-gray-400 hover:text-premium-royal hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 >
                     <Paperclip className="w-5 h-5" />
                 </button>
@@ -239,12 +239,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder={isClient ? "Type a message..." : "Ask AI assistant..."}
-              className="flex-1 bg-gray-100 dark:bg-gray-700 border-none rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
+              className="flex-1 bg-gray-100 dark:bg-gray-700 border-none rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-premium-royal text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
             />
             <button 
               onClick={handleSend}
               disabled={(isLoading && !isClient) || !inputText.trim()}
-              className="bg-primary-600 text-white p-2.5 rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-md"
+              className="bg-gradient-to-r from-premium-royal to-premium-indigo text-white p-2.5 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-md"
             >
               <Send className="w-5 h-5" />
             </button>
@@ -256,7 +256,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ user, messages = [], onS
       <div className="relative group">
          <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`transition-all duration-300 ${isOpen ? 'rotate-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'} bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white p-4 rounded-full shadow-xl hover:shadow-primary-500/40`}
+            className={`transition-all duration-300 ${isOpen ? 'rotate-90 opacity-0 pointer-events-none' : 'rotate-0 opacity-100'} bg-gradient-to-r from-premium-royal to-premium-indigo hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] text-white p-4 rounded-full shadow-xl`}
          >
             <MessageSquare className="w-7 h-7" />
          </button>

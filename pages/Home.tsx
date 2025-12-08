@@ -22,13 +22,13 @@ export const Home: React.FC = () => {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-16">
             <div className="lg:w-1/2 space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-theme-card/50 backdrop-blur-sm border border-theme-border shadow-sm animate-fade-in-up">
-                <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+                <span className="flex h-2 w-2 rounded-full bg-premium-aqua"></span>
                 <span className="text-theme-muted text-sm font-semibold">Available for new projects</span>
               </div>
               
               <h1 className="text-5xl md:text-7xl font-extrabold text-theme-text tracking-tight leading-[1.1]">
                 Hire expert services <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-secondary-500 to-primary-600 bg-[length:200%_auto] animate-gradient">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-premium-royal via-premium-indigo to-premium-royal bg-[length:200%_auto] animate-gradient">
                   to elevate your brand
                 </span>
               </h1>
@@ -38,10 +38,10 @@ export const Home: React.FC = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link to="/register" className="px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-gray-500/30 text-center flex items-center justify-center gap-2 group">
+                <Link to="/register" className="px-8 py-4 bg-gradient-to-r from-premium-royal to-premium-indigo text-white rounded-full font-bold text-lg hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all transform hover:-translate-y-1 text-center flex items-center justify-center gap-2 group">
                   Order Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link to="/services" className="px-8 py-4 bg-theme-card/50 backdrop-blur-sm text-theme-text border border-theme-border rounded-full font-bold text-lg hover:bg-theme-card transition-all text-center shadow-sm hover:shadow-md">
+                <Link to="/services" className="px-8 py-4 bg-theme-card/50 backdrop-blur-sm text-theme-text border border-theme-border rounded-full font-bold text-lg hover:bg-theme-card hover:shadow-[0_0_15px_rgba(6,214,160,0.3)] transition-all text-center">
                   View Services
                 </Link>
               </div>
@@ -69,7 +69,7 @@ export const Home: React.FC = () => {
                       {/* Abstract UI Representation */}
                       <div className="flex items-center justify-between mb-8">
                           <div className="flex items-center gap-3">
-                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 p-0.5">
+                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-premium-royal to-premium-indigo p-0.5">
                                 <img src="https://picsum.photos/seed/aqib/200/200" alt="Aqib" className="w-full h-full rounded-full border-2 border-white dark:border-slate-700" />
                              </div>
                              <div>
@@ -78,13 +78,13 @@ export const Home: React.FC = () => {
                              </div>
                           </div>
                           <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online
+                             <span className="w-2 h-2 bg-premium-aqua rounded-full animate-pulse"></span> Online
                           </div>
                       </div>
 
                       <div className="space-y-4">
                           <div className="bg-white/60 dark:bg-slate-700/50 p-4 rounded-xl flex items-center gap-4 shadow-sm hover:scale-105 transition-transform cursor-pointer">
-                              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg text-blue-600 dark:text-blue-400"><Code className="w-6 h-6" /></div>
+                              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg text-premium-royal"><Code className="w-6 h-6" /></div>
                               <div>
                                   <h4 className="font-bold text-theme-text">Web Development</h4>
                                   <p className="text-xs text-theme-muted">React, Node.js, TypeScript</p>
@@ -129,7 +129,7 @@ export const Home: React.FC = () => {
 
                   {/* Floating elements behind */}
                   <div className="absolute -top-10 -right-10 w-24 h-24 bg-yellow-400 rounded-2xl rotate-12 -z-10 opacity-20 animate-bounce"></div>
-                  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary-600 rounded-full -z-10 opacity-20 animate-pulse"></div>
+                  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-premium-royal rounded-full -z-10 opacity-20 animate-pulse"></div>
                </div>
             </div>
           </div>
@@ -143,7 +143,7 @@ export const Home: React.FC = () => {
             <h2 className="text-4xl font-bold text-theme-text mb-4">My Expert Services</h2>
             <p className="text-theme-muted max-w-2xl">I offer a wide range of digital services to help your business grow. Choose a category below or browse all services.</p>
           </div>
-          <Link to="/services" className="hidden md:flex items-center px-6 py-3 bg-theme-card text-theme-text rounded-full font-semibold hover:bg-theme-main transition-colors border border-theme-border">
+          <Link to="/services" className="hidden md:flex items-center px-6 py-3 bg-theme-card text-theme-text rounded-full font-semibold hover:bg-theme-main transition-colors border border-theme-border hover:shadow-[0_0_10px_rgba(6,214,160,0.3)]">
             View All Services <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
         </div>
@@ -155,7 +155,7 @@ export const Home: React.FC = () => {
         </div>
         
         <div className="mt-12 text-center md:hidden">
-           <Link to="/services" className="inline-flex items-center text-primary-600 font-semibold">
+           <Link to="/services" className="inline-flex items-center text-premium-royal font-semibold">
             View All Services <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
         </div>
@@ -207,7 +207,7 @@ export const Home: React.FC = () => {
                             <img src={t.avatar} alt={t.name} className="w-14 h-14 rounded-full object-cover border-2 border-primary-100" />
                             <div>
                                 <h4 className="font-bold text-theme-text text-lg">{t.name}</h4>
-                                <p className="text-sm text-primary-600 font-medium">{t.role}</p>
+                                <p className="text-sm text-premium-royal font-medium">{t.role}</p>
                             </div>
                         </div>
                         <p className="text-theme-muted italic leading-relaxed">"{t.text}"</p>
@@ -222,14 +222,14 @@ export const Home: React.FC = () => {
       
       {/* Newsletter Popup / Section */}
       <section className="py-20 max-w-5xl mx-auto px-4">
-        <div className="bg-primary-600 rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-2xl">
+        <div className="bg-gradient-to-br from-premium-royal to-premium-indigo rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-2xl">
            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
            <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to start your project?</h2>
-              <p className="text-primary-100 mb-8 max-w-2xl mx-auto text-lg">Join the newsletter to receive exclusive offers and updates on my services.</p>
+              <p className="text-blue-100 mb-8 max-w-2xl mx-auto text-lg">Join the newsletter to receive exclusive offers and updates on my services.</p>
               <form className="max-w-md mx-auto flex gap-2">
-                 <input type="email" placeholder="Enter your email address" className="flex-1 px-6 py-4 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-primary-400" />
-                 <button className="bg-gray-900 text-white px-8 py-4 rounded-full font-bold hover:bg-gray-800 transition-colors">Subscribe</button>
+                 <input type="email" placeholder="Enter your email address" className="flex-1 px-6 py-4 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-premium-aqua/50" />
+                 <button className="bg-gray-900 text-white px-8 py-4 rounded-full font-bold hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all">Subscribe</button>
               </form>
            </div>
         </div>

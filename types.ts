@@ -1,3 +1,4 @@
+
 export enum Category {
   DESIGN = 'Graphics & Design',
   DEV = 'Programming & Tech',
@@ -46,7 +47,19 @@ export interface User {
   phone?: string;
   avatar: string;
   role: 'client' | 'admin';
-  password?: string; // Added for authentication
+  password?: string;
+  isVerified?: boolean;     // New: For email verification
+  verificationCode?: string; // New: To store the temporary OTP
+}
+
+// New Interface for the Checkout Form
+export interface CheckoutData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  address: string;
+  city: string;
+  zip: string;
 }
 
 export interface Order {

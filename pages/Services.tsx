@@ -48,9 +48,9 @@ export const Services: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === cat 
-                    ? 'bg-primary-600 text-white shadow-md' 
+                    ? 'bg-gradient-to-r from-premium-royal to-premium-indigo text-white shadow-[0_0_15px_rgba(6,214,160,0.5)] transform scale-105' 
                     : 'bg-theme-main text-theme-muted hover:bg-theme-border'
                 }`}
               >

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MemoryRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
@@ -7,10 +8,13 @@ import { ServiceDetail } from './pages/ServiceDetail';
 import { Dashboard } from './pages/Dashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Reviews } from './pages/Reviews';
+import { UserSettings } from './pages/UserSettings';
 import { ChatWidget } from './components/ChatWidget';
-import { MOCK_SERVICES, APP_NAME, MOCK_SITE_REVIEWS } from './constants';
-import { User, Order, Service, DirectMessage, SiteReview } from './types';
-import { Mail, Lock, User as UserIcon, Phone, X } from 'lucide-react';
+import { VerificationModal } from './components/VerificationModal';
+import { MOCK_SERVICES, APP_NAME } from './constants';
+import { User, Order, Service, DirectMessage, SiteReview, CheckoutData } from './types';
+import { Mail, Lock, User as UserIcon, Phone, X, AlertCircle } from 'lucide-react';
+import { supabase } from './services/supabaseClient';
 
 const ADMIN_EMAIL = 'admin@myapp.com';
 
@@ -46,14 +50,14 @@ const ForgotPasswordModal = ({ onClose }: { onClose: () => void }) => {
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-primary-500 outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-theme-border bg-theme-input text-theme-text focus:ring-2 focus:ring-premium-royal outline-none"
               placeholder="you@example.com"
             />
           </div>
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-premium-royal to-premium-indigo text-white py-2 rounded-full font-medium hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
@@ -64,10 +68,11 @@ const ForgotPasswordModal = ({ onClose }: { onClose: () => void }) => {
 };
 
 // Auth Component
-const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => void }) => {
+const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => string | void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [loginError, setLoginError] = useState(''); // New state for error message
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -78,14 +83,20 @@ const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => void })
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setLoginError(''); // Clear previous errors on submit attempt
+
     // Simulate API delay
     setTimeout(() => {
-      onAuth(formData, isLogin);
+      const error = onAuth(formData, isLogin);
+      if (error) {
+        setLoginError(error);
+      }
       setLoading(false);
     }, 800);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginError(''); // Auto-clear error when user types
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -95,9 +106,9 @@ const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => void })
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-200 dark:bg-primary-900/40 rounded-full blur-3xl opacity-30"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-secondary-200 dark:bg-secondary-900/40 rounded-full blur-3xl opacity-30"></div>
 
-      <div className="max-w-md w-full space-y-8 bg-theme-card p-10 rounded-2xl shadow-xl relative z-10 glass">
+      <div className="max-w-md w-full space-y-8 bg-theme-card p-10 rounded-3xl shadow-2xl relative z-10 glass border border-white/20">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary-600 to-secondary-500 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg mx-auto mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-premium-royal to-premium-indigo rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg mx-auto mb-6">
             TR
           </div>
           <h2 className="text-3xl font-extrabold text-theme-text">
@@ -109,101 +120,126 @@ const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => void })
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-xl shadow-sm -space-y-px">
+          {/* Form Fields Container with Spacing */}
+          <div className="space-y-5">
             {!isLogin && (
-              <div className="relative mb-4">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-theme-muted" />
+              <div>
+                <label className="block text-sm font-semibold text-theme-text mb-1.5 ml-1">Full Name</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <UserIcon className="h-5 w-5 text-theme-muted group-focus-within:text-premium-royal transition-colors" />
+                  </div>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    className="block w-full pl-11 px-4 py-3.5 border border-theme-border rounded-xl text-theme-text bg-theme-input focus:outline-none focus:ring-2 focus:ring-premium-royal/50 focus:border-premium-royal transition-all shadow-sm hover:border-premium-royal/50 sm:text-sm"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
                 </div>
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-theme-border placeholder-theme-muted text-theme-text bg-theme-input focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  placeholder="Full Name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
               </div>
             )}
             
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-theme-muted" />
+            <div>
+              <label className="block text-sm font-semibold text-theme-text mb-1.5 ml-1">Email Address</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-theme-muted group-focus-within:text-premium-royal transition-colors" />
+                </div>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  className="block w-full pl-11 px-4 py-3.5 border border-theme-border rounded-xl text-theme-text bg-theme-input focus:outline-none focus:ring-2 focus:ring-premium-royal/50 focus:border-premium-royal transition-all shadow-sm hover:border-premium-royal/50 sm:text-sm"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
               </div>
-              <input
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-theme-border placeholder-theme-muted text-theme-text bg-theme-input focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
             </div>
 
             {!isLogin && (
-               <div className="relative mb-4">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                   <Phone className="h-5 w-5 text-theme-muted" />
+               <div>
+                 <label className="block text-sm font-semibold text-theme-text mb-1.5 ml-1">Phone Number</label>
+                 <div className="relative group">
+                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                     <Phone className="h-5 w-5 text-theme-muted group-focus-within:text-premium-royal transition-colors" />
+                   </div>
+                   <input
+                     name="phone"
+                     type="tel"
+                     required
+                     className="block w-full pl-11 px-4 py-3.5 border border-theme-border rounded-xl text-theme-text bg-theme-input focus:outline-none focus:ring-2 focus:ring-premium-royal/50 focus:border-premium-royal transition-all shadow-sm hover:border-premium-royal/50 sm:text-sm"
+                     placeholder="+1 234 567 890"
+                     value={formData.phone}
+                     onChange={handleChange}
+                   />
                  </div>
-                 <input
-                   name="phone"
-                   type="tel"
-                   required
-                   className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-theme-border placeholder-theme-muted text-theme-text bg-theme-input focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                   placeholder="Phone Number"
-                   value={formData.phone}
-                   onChange={handleChange}
-                 />
                </div>
             )}
 
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-theme-muted" />
+            <div>
+              <label className="block text-sm font-semibold text-theme-text mb-1.5 ml-1">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-theme-muted group-focus-within:text-premium-royal transition-colors" />
+                </div>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  className="block w-full pl-11 px-4 py-3.5 border border-theme-border rounded-xl text-theme-text bg-theme-input focus:outline-none focus:ring-2 focus:ring-premium-royal/50 focus:border-premium-royal transition-all shadow-sm hover:border-premium-royal/50 sm:text-sm"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
               </div>
-              <input
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-theme-border placeholder-theme-muted text-theme-text bg-theme-input focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
             </div>
           </div>
 
+          {/* INLINE ERROR MESSAGE */}
+          {loginError && (
+            <div className="mt-4 bg-[#ffe6e6] text-[#d00000] px-4 py-3 rounded-xl text-sm font-bold text-center flex items-center justify-center gap-2 animate-pulse">
+              <AlertCircle className="w-4 h-4" />
+              {loginError}
+            </div>
+          )}
+
           {isLogin && (
-             <div className="flex justify-end">
+             <div className="flex justify-end pt-2">
                 <button 
                   type="button" 
                   onClick={() => setShowForgotPassword(true)}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                  className="text-sm font-medium text-premium-royal hover:text-premium-indigo hover:underline transition-all"
                 >
                    Forgot password?
                 </button>
              </div>
           )}
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 shadow-lg transform transition-all hover:-translate-y-0.5"
+              className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-full text-white bg-gradient-to-r from-premium-royal to-premium-indigo hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-premium-royal disabled:opacity-50 shadow-lg transform transition-all hover:-translate-y-0.5 active:scale-95"
             >
               {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
             </button>
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center pt-2">
             <button 
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm font-medium text-primary-600 hover:text-primary-500"
+              onClick={() => { setIsLogin(!isLogin); setLoginError(''); }}
+              className="text-sm font-medium text-theme-muted hover:text-premium-royal transition-colors"
             >
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              {isLogin ? (
+                <>Don't have an account? <span className="font-bold text-premium-royal underline ml-1">Sign up</span></>
+              ) : (
+                <>Already have an account? <span className="font-bold text-premium-royal underline ml-1">Sign in</span></>
+              )}
             </button>
           </div>
         </form>
@@ -228,6 +264,7 @@ const AppContent = () => {
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
+    // Initial load from local storage, but useEffect will fetch from Supabase
     const saved = localStorage.getItem('orders');
     return saved ? JSON.parse(saved) : [];
   });
@@ -251,7 +288,11 @@ const AppContent = () => {
     return localStorage.getItem('appName') || APP_NAME;
   });
 
-  // Auto-Save Effects
+  // Verification State
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
+
+  // Auto-Save Effects (Local Storage)
   useEffect(() => {
     if (user) {
       localStorage.setItem('currentUser', JSON.stringify(user));
@@ -261,37 +302,85 @@ const AppContent = () => {
   }, [user]);
 
   useEffect(() => { localStorage.setItem('services', JSON.stringify(services)); }, [services]);
-  useEffect(() => { localStorage.setItem('orders', JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem('users', JSON.stringify(registeredUsers)); }, [registeredUsers]);
   useEffect(() => { localStorage.setItem('messages', JSON.stringify(messages)); }, [messages]);
   useEffect(() => { localStorage.setItem('reviews', JSON.stringify(siteReviews)); }, [siteReviews]);
   useEffect(() => { localStorage.setItem('appName', siteName); }, [siteName]);
 
-  const [unreadMessages] = useState(0); // For now simple static or derived later
+  // SUPABASE: Fetch Orders on Mount
+  useEffect(() => {
+    const fetchOrders = async () => {
+      // Note: We need to map Supabase columns back to our App Order type if names differ
+      // For simplicity, we assume the dashboard only needs basic fields or we map them here
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching orders from Supabase:', error);
+      } else if (data) {
+        // Simple mapping if needed, otherwise cast
+        const mappedOrders = data.map((d: any) => ({
+             id: d.id.toString(),
+             serviceId: 'unknown',
+             serviceTitle: d.product_name || 'Service',
+             serviceImage: 'https://picsum.photos/seed/order/100/100',
+             price: d.total_amount || 0,
+             status: d.status || 'active',
+             date: new Date(d.created_at).toLocaleDateString(),
+             clientName: `${d.first_name} ${d.last_name}`
+        })) as Order[];
+        
+        setOrders(mappedOrders);
+        localStorage.setItem('orders', JSON.stringify(mappedOrders));
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Calculate unread messages dynamically
+  const unreadMessagesCount = user 
+    ? messages.filter(m => !m.isRead && m.receiverId === user.id).length
+    : 0;
+    
   const navigate = useNavigate();
 
-  const handleAuth = (data: any, isLogin: boolean) => {
+  // Updated to return string errors instead of alerts
+  const handleAuth = (data: any, isLogin: boolean): string | void => {
     if (isLogin) {
       // 1. Find User
       const existingUser = registeredUsers.find(u => u.email === data.email);
       
-      // 2. Check Admin Special Case (must exist in DB or just rule check?)
-      // We will follow rule: If email is admin, role is admin. But password must match.
-      
       if (!existingUser) {
-        alert("Account not found. Please register first.");
-        return;
+        return "Account does not exist. Please register first.";
       }
 
       if (existingUser.password !== data.password) {
-        alert("Incorrect password. Please try again.");
-        return;
+        return "Incorrect password. Please try again.";
+      }
+
+      // Check Verification
+      if (!existingUser.isVerified) {
+          // If not verified, trigger verification flow again
+          setPendingVerificationEmail(existingUser.email);
+          const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+          
+          // Update the user's code in DB
+          const updatedUsers = registeredUsers.map(u => 
+             u.email === existingUser.email ? { ...u, verificationCode: newCode } : u
+          );
+          setRegisteredUsers(updatedUsers);
+          
+          setShowVerifyModal(true);
+          // Return generic message but modal handles the rest
+          return "Please verify your email before logging in."; 
       }
 
       // 3. Successful Login
-      // Enforce Admin Role Rule
+      // Enforce Admin Role Rule for specific email
       if (existingUser.email === ADMIN_EMAIL && existingUser.role !== 'admin') {
-         // Auto-fix role if it drifted (shouldn't happen with updated logic below)
          existingUser.role = 'admin';
       }
 
@@ -306,13 +395,14 @@ const AppContent = () => {
       // REGISTER
       // 1. Check Duplicates
       if (registeredUsers.some(u => u.email === data.email)) {
-        alert("This email is already registered.");
-        return;
+        return "This email is already registered.";
       }
       
-      // 2. Determine Role
-      const role = data.email === ADMIN_EMAIL ? 'admin' : 'client';
+      // 2. Generate OTP
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
       
+      // 3. Create Unverified User
+      const role = data.email === ADMIN_EMAIL ? 'admin' : 'client';
       const newUser: User = {
         id: `u${Date.now()}`,
         name: data.name,
@@ -320,18 +410,102 @@ const AppContent = () => {
         phone: data.phone,
         avatar: `https://picsum.photos/seed/${data.name}/100/100`,
         role: role,
-        password: data.password // Save password
+        password: data.password,
+        isVerified: false,
+        verificationCode: otp
       };
       
       setRegisteredUsers(prev => [...prev, newUser]);
-      setUser(newUser);
+      setPendingVerificationEmail(newUser.email);
       
-      if (role === 'admin') {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      // Show Verification UI
+      alert(`Verification Code: ${otp}`);
+      setShowVerifyModal(true);
     }
+  };
+
+  const handleVerify = (code: string) => {
+      const userToVerify = registeredUsers.find(u => u.email === pendingVerificationEmail);
+      if (!userToVerify) return;
+
+      if (userToVerify.verificationCode === code) {
+          // Update user status
+          const updatedUser: User = { ...userToVerify, isVerified: true };
+          
+          // Update DB
+          setRegisteredUsers(prev => prev.map(u => u.email === pendingVerificationEmail ? updatedUser : u));
+          
+          // Login User
+          setUser(updatedUser);
+          setShowVerifyModal(false);
+          alert("Account Verified Successfully!");
+          
+          if (updatedUser.role === 'admin') {
+            navigate('/admin-dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+      } else {
+          alert("Invalid Verification Code. Please try again.");
+      }
+  };
+
+  const handleResendCode = () => {
+      const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+      setRegisteredUsers(prev => prev.map(u => u.email === pendingVerificationEmail ? { ...u, verificationCode: newCode } : u));
+      // In a real app, send email here.
+      console.log(`Resent Code: ${newCode}`); 
+  };
+
+  const handleUpdateProfile = (updatedData: Partial<User>) => {
+      if (!user) return;
+      
+      // If email is changing, we must re-verify
+      if (updatedData.email && updatedData.email !== user.email) {
+          const otp = Math.floor(1000 + Math.random() * 9000).toString();
+          const updatedUser = { ...user, ...updatedData, isVerified: false, verificationCode: otp };
+          
+          // Update DB
+          setRegisteredUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
+          
+          // Logout and show verify
+          setUser(null);
+          setPendingVerificationEmail(updatedUser.email);
+          alert(`Email changed. Verification Code: ${otp}`);
+          setShowVerifyModal(true);
+          return;
+      }
+
+      const updatedUser = { ...user, ...updatedData };
+      setRegisteredUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u));
+      setUser(updatedUser);
+  };
+
+  const handleDeleteAccount = () => {
+      if (!user) return;
+      
+      // 3. Backend Logic: Admin Block
+      if (user.email === ADMIN_EMAIL || user.role === 'admin') {
+          alert("Admin account cannot be deleted.");
+          return;
+      }
+
+      try {
+          // 4. Database Consistency
+          setRegisteredUsers(prev => prev.filter(u => u.id !== user.id));
+          setMessages(prev => prev.filter(m => m.senderId !== user.id));
+          setSiteReviews(prev => prev.filter(r => r.userId !== user.id));
+          
+          // Clear session and redirect to Login
+          setUser(null);
+          localStorage.removeItem('currentUser');
+          navigate('/login');
+          
+          alert("Your account has been deleted successfully.");
+      } catch (error) {
+          console.error("Deletion Error:", error);
+          alert("Error deleting account. Please try again.");
+      }
   };
 
   const handleLogout = () => {
@@ -339,19 +513,46 @@ const AppContent = () => {
     navigate('/');
   };
 
-  const handleOrder = (serviceId: string) => {
+  // SUPABASE: Checkout Logic (Updated with CheckoutData)
+  const handleOrder = async (serviceId: string, checkoutData: CheckoutData) => {
     const service = services.find(s => s.id === serviceId);
     if (service && user) {
+      
+      // Insert into Supabase 'orders' table
+      // Mapping our form data to the specific columns requested
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([{
+            first_name: checkoutData.firstName,
+            last_name: checkoutData.lastName,
+            email: checkoutData.email,
+            street_address: checkoutData.address,
+            city: checkoutData.city,
+            zip_code: checkoutData.zip,
+            product_name: service.title,
+            total_amount: service.price,
+            status: 'active'
+        }])
+        .select();
+
+      if (error) {
+        console.error('Supabase Order Error:', error);
+        alert('Failed to process order in database. Please try again.');
+        return;
+      }
+      
+      // Update Local State for immediate UI feedback (simulating the returned order structure for internal app use)
       const newOrder: Order = {
-        id: `o${Date.now()}`,
+        id: data && data[0] ? data[0].id.toString() : `o${Date.now()}`,
         serviceId: service.id,
         serviceTitle: service.title,
         serviceImage: service.image,
         price: service.price,
         status: 'active',
         date: new Date().toLocaleDateString(),
-        clientName: user.name
+        clientName: `${checkoutData.firstName} ${checkoutData.lastName}`
       };
+
       setOrders(prev => [newOrder, ...prev]);
     }
   };
@@ -371,17 +572,17 @@ const AppContent = () => {
 
   const handleUpdateOrder = (id: string, status: Order['status'], deliverables?: string) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status, deliverables } : o));
+    // Optionally update Supabase status here as well
+    // supabase.from('orders').update({ status }).eq('id', id)...
   };
   
   // Message Handling
   const handleSendMessage = (text: string, attachment?: string) => {
     if (!user) return;
     
-    // If client sends, receiver is Admin.
-    // We need to find the admin ID. For simplicity, we assume an admin exists or just use a placeholder ID if no admin is registered yet.
-    // Ideally we look up the admin user.
-    const adminUser = registeredUsers.find(u => u.role === 'admin');
-    const receiverId = adminUser ? adminUser.id : 'admin_placeholder';
+    // Find Admin to receive message
+    const adminUser = registeredUsers.find(u => u.role === 'admin' || u.email === ADMIN_EMAIL);
+    const receiverId = adminUser ? adminUser.id : 'admin';
 
     const newMessage: DirectMessage = {
         id: `m${Date.now()}`,
@@ -412,6 +613,16 @@ const AppContent = () => {
       setMessages(prev => [...prev, newMessage]);
   };
 
+  const handleMarkAsRead = (senderId: string) => {
+      if (!user) return;
+      // Mark all messages from this sender to current user as read
+      setMessages(prev => prev.map(m => 
+        (m.senderId === senderId && m.receiverId === user.id && !m.isRead) 
+          ? { ...m, isRead: true } 
+          : m
+      ));
+  };
+
   // Review Handling
   const handleAddReview = (rating: number, comment: string) => {
       if(!user) return;
@@ -431,16 +642,39 @@ const AppContent = () => {
       setSiteReviews(prev => prev.filter(r => r.id !== id));
   };
 
-  const notificationCount = orders.filter(o => o.status === 'active').length + unreadMessages;
+  // Notification counts
+  const notificationCount = orders.filter(o => o.status === 'active').length + unreadMessagesCount;
 
   return (
     <>
-      <Layout user={user} onLogout={handleLogout} notificationCount={notificationCount} appName={siteName}>
+      <Layout 
+        user={user} 
+        onLogout={handleLogout} 
+        notificationCount={notificationCount} 
+        unreadMessageCount={unreadMessagesCount} 
+        appName={siteName}
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
           <Route path="/service/:id" element={<ServiceDetail user={user} onOrder={handleOrder} />} />
           <Route path="/reviews" element={<Reviews user={user} reviews={siteReviews} onAddReview={handleAddReview} />} />
+          
+          {/* USER SETTINGS */}
+          <Route 
+             path="/settings" 
+             element={
+                 user ? (
+                    <UserSettings 
+                        user={user} 
+                        onUpdateProfile={handleUpdateProfile} 
+                        onDeleteAccount={handleDeleteAccount} 
+                    />
+                 ) : (
+                     <Navigate to="/login" />
+                 )
+             } 
+          />
           
           {/* CLIENT DASHBOARD - Protected */}
           <Route 
@@ -467,6 +701,7 @@ const AppContent = () => {
                   appName={siteName}
                   onUpdateAppName={setSiteName}
                   onSendMessage={handleAdminSendMessage}
+                  onMarkAsRead={handleMarkAsRead}
                   onDeleteReview={handleDeleteReview}
                 />
               ) : (
@@ -481,6 +716,14 @@ const AppContent = () => {
         </Routes>
       </Layout>
       <ChatWidget user={user} messages={messages} onSendMessage={handleSendMessage} />
+      {showVerifyModal && (
+          <VerificationModal 
+             email={pendingVerificationEmail} 
+             onVerify={handleVerify} 
+             onResend={handleResendCode} 
+             onClose={() => setShowVerifyModal(false)}
+          />
+      )}
     </>
   );
 };

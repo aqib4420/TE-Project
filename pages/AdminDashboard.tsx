@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   BarChart, Users, ShoppingBag, DollarSign, Settings, 
   Plus, Edit, Trash2, Search, Upload, CheckCircle, XCircle, X, User as UserIcon, Calendar, FileText, Palette, Globe,
-  MessageSquare, Star, Send, Paperclip, Download
+  MessageSquare, Star, Send, Paperclip, Download, Layout
 } from 'lucide-react';
 import { Service, Order, User, Category, DirectMessage, SiteReview } from '../types';
 
@@ -20,6 +20,7 @@ interface AdminDashboardProps {
   appName: string;
   onUpdateAppName: (name: string) => void;
   onSendMessage: (receiverId: string, text: string, attachment?: string) => void;
+  onMarkAsRead: (senderId: string) => void;
   onDeleteReview: (id: string) => void;
 }
 
@@ -37,6 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   appName,
   onUpdateAppName,
   onSendMessage,
+  onMarkAsRead,
   onDeleteReview
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'orders' | 'users' | 'messages' | 'reviews' | 'settings'>('overview');
@@ -51,19 +53,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Settings State
   const [tempAppName, setTempAppName] = useState(appName);
-  const [primaryColor, setPrimaryColor] = useState('#3b82f6');
-  const [secondaryColor, setSecondaryColor] = useState('#8b5cf6');
-
-  // Sync color state with actual CSS variables on mount
-  useEffect(() => {
-    const rootStyle = getComputedStyle(document.documentElement);
-    const currentPrimary = rootStyle.getPropertyValue('--color-primary-500').trim();
-    const currentSecondary = rootStyle.getPropertyValue('--color-secondary-500').trim();
-    
-    // Simple check to ensure we got a hex code
-    if (currentPrimary && currentPrimary.startsWith('#')) setPrimaryColor(currentPrimary);
-    if (currentSecondary && currentSecondary.startsWith('#')) setSecondaryColor(currentSecondary);
-  }, []);
+  
+  // Initialize color states from localStorage to ensure Hex format for input[type="color"]
+  // Computed styles often return rgb() which breaks the input.
+  const [primaryColor, setPrimaryColor] = useState(localStorage.getItem('primaryColor') || '#3b82f6');
+  const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem('secondaryColor') || '#8b5cf6');
+  const [borderColor, setBorderColor] = useState(localStorage.getItem('borderColor') || '#e5e7eb');
+  const [cardBgColor, setCardBgColor] = useState(localStorage.getItem('cardBgColor') || '#ffffff');
 
   // Sync app name state when prop changes
   useEffect(() => {
@@ -135,20 +131,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const adjustColor = (color: string, amount: number) => {
+    // Basic hex adjustment (could be robustified)
+    if (!color.startsWith('#')) return color;
     return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
   }
 
   const handleUpdateSettings = () => {
     onUpdateAppName(tempAppName);
     // Update CSS variables for live preview
-    document.documentElement.style.setProperty('--color-primary-500', primaryColor);
-    document.documentElement.style.setProperty('--color-primary-600', adjustColor(primaryColor, -20));
-    document.documentElement.style.setProperty('--color-secondary-500', secondaryColor);
-    document.documentElement.style.setProperty('--color-secondary-600', adjustColor(secondaryColor, -20));
+    const root = document.documentElement;
+    root.style.setProperty('--color-primary-500', primaryColor);
+    root.style.setProperty('--color-primary-600', adjustColor(primaryColor, -20));
+    root.style.setProperty('--color-secondary-500', secondaryColor);
+    root.style.setProperty('--color-secondary-600', adjustColor(secondaryColor, -20));
+    root.style.setProperty('--border-color', borderColor);
+    root.style.setProperty('--bg-card', cardBgColor);
     
-    // Optional: Save to localStorage for persistence across reloads (basic implementation)
+    // Save to localStorage for persistence
     localStorage.setItem('primaryColor', primaryColor);
     localStorage.setItem('secondaryColor', secondaryColor);
+    localStorage.setItem('borderColor', borderColor);
+    localStorage.setItem('cardBgColor', cardBgColor);
     
     alert("Settings updated successfully!");
   };
@@ -170,45 +173,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return <div className="p-10 text-center text-red-500 font-bold">Access Denied</div>;
   }
   
-  const unreadMessageCount = messages.filter(m => !m.isRead && m.senderId !== user.id).length;
+  // Accurately calculate unread messages sent TO the admin
+  const unreadMessageCount = messages.filter(m => !m.isRead && m.receiverId === user.id).length;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0">
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-primary-600 mb-2">Admin Portal</h2>
+          <h2 className="text-2xl font-bold text-premium-royal mb-2">Admin Portal</h2>
           <p className="text-xs text-gray-500 uppercase tracking-wider">Management</p>
         </div>
         <nav className="mt-4 space-y-1 px-4 flex-1 overflow-y-auto">
-          <button onClick={() => setActiveTab('overview')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'overview' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('overview')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'overview' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <BarChart className="w-5 h-5" /> Overview
           </button>
-          <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'orders' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'orders' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <ShoppingBag className="w-5 h-5" /> Orders
           </button>
-          <button onClick={() => setActiveTab('messages')} className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'messages' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+          
+          {/* Messages Link with Notification Badge */}
+          <button onClick={() => setActiveTab('messages')} className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'messages' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <div className="flex items-center gap-3">
               <MessageSquare className="w-5 h-5" /> Messages
             </div>
             {unreadMessageCount > 0 && (
-              <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
                 {unreadMessageCount}
               </span>
             )}
           </button>
-           <button onClick={() => setActiveTab('reviews')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'reviews' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+
+           <button onClick={() => setActiveTab('reviews')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'reviews' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <Star className="w-5 h-5" /> Reviews
           </button>
-          <button onClick={() => setActiveTab('services')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'services' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('services')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'services' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <Settings className="w-5 h-5" /> Services
           </button>
-          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'users' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'users' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
             <Users className="w-5 h-5" /> Users
           </button>
         </nav>
         <div className="p-4 border-t border-gray-100 dark:border-gray-700">
-             <button onClick={() => setActiveTab('settings')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'settings' ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+             <button onClick={() => setActiveTab('settings')} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${activeTab === 'settings' ? 'bg-blue-50 text-premium-royal dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
                <Palette className="w-5 h-5" /> Settings
              </button>
         </div>
@@ -271,7 +278,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="flex justify-end mb-6">
                 <button 
                     onClick={() => { setIsAddingService(true); setFormData({}); }}
-                    className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                    className="flex items-center gap-2 bg-gradient-to-r from-premium-royal to-premium-indigo text-white px-4 py-2 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all"
                 >
                     <Plus className="w-5 h-5" /> Add New Service
                 </button>
@@ -301,8 +308,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         />
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={handleSaveService} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Save</button>
-                        <button onClick={() => { setIsAddingService(false); setIsEditingService(null); }} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
+                        <button onClick={handleSaveService} className="bg-gradient-to-r from-premium-royal to-premium-indigo text-white px-4 py-2 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all">Save</button>
+                        <button onClick={() => { setIsAddingService(false); setIsEditingService(null); }} className="bg-gray-500 text-white px-4 py-2 rounded-full hover:bg-gray-600">Cancel</button>
                     </div>
                 </div>
                 )}
@@ -319,7 +326,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                     <div className="p-4">
                         <h3 className="font-bold text-gray-900 dark:text-white truncate">{service.title}</h3>
-                        <p className="text-primary-600 font-bold mt-2">${service.price}</p>
+                        <p className="text-premium-royal font-bold mt-2">${service.price}</p>
                     </div>
                     </div>
                 ))}
@@ -402,21 +409,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <h3 className="font-bold text-gray-700 dark:text-gray-200">Chats</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                            {chats.length > 0 ? chats.map(chatUser => (
-                                <div 
-                                    key={chatUser.id}
-                                    onClick={() => setSelectedChatUser(chatUser)}
-                                    className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedChatUser?.id === chatUser.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <img src={chatUser.avatar} alt={chatUser.name} className="w-10 h-10 rounded-full" />
-                                        <div>
-                                            <p className="font-bold text-sm text-gray-900 dark:text-white">{chatUser.name}</p>
-                                            <p className="text-xs text-gray-500">Client</p>
+                            {chats.length > 0 ? chats.map(chatUser => {
+                                const userUnreadCount = messages.filter(m => !m.isRead && m.senderId === chatUser.id && m.receiverId === user.id).length;
+                                return (
+                                    <div 
+                                        key={chatUser.id}
+                                        onClick={() => { setSelectedChatUser(chatUser); onMarkAsRead(chatUser.id); }}
+                                        className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${selectedChatUser?.id === chatUser.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <img src={chatUser.avatar} alt={chatUser.name} className="w-10 h-10 rounded-full" />
+                                                {userUnreadCount > 0 && (
+                                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border border-white dark:border-gray-800">
+                                                        {userUnreadCount}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-sm text-gray-900 dark:text-white">{chatUser.name}</p>
+                                                <p className="text-xs text-gray-500">Client</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )) : (
+                                );
+                            }) : (
                                 <div className="p-4 text-center text-gray-500">No active chats</div>
                             )}
                         </div>
@@ -434,7 +451,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     </div>
                                     <button 
                                       onClick={handleSendFile}
-                                      className="flex items-center gap-2 text-sm text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-3 py-1.5 rounded-lg hover:bg-primary-100 transition-colors"
+                                      className="flex items-center gap-2 text-sm text-premium-royal bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
                                     >
                                         <Paperclip className="w-4 h-4" /> Send File
                                     </button>
@@ -448,25 +465,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             const isMe = msg.senderId === user.id;
                                             return (
                                                 <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                                    <div className={`max-w-[75%] p-3 rounded-2xl text-sm ${isMe ? 'bg-primary-600 text-white rounded-br-none' : 'bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-bl-none text-gray-800 dark:text-gray-200'}`}>
+                                                    <div className={`max-w-[75%] p-3 rounded-2xl text-sm ${isMe ? 'bg-gradient-to-r from-premium-royal to-premium-indigo text-white rounded-br-none' : 'bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-bl-none text-gray-800 dark:text-gray-200'}`}>
                                                         {msg.attachment && (
                                                             <a href={msg.attachment} target="_blank" rel="noreferrer" className={`flex items-center gap-3 p-2 rounded-xl mb-2 transition-colors border group ${
                                                                 isMe 
-                                                                  ? 'bg-primary-700/50 border-primary-500/30 hover:bg-primary-700' 
+                                                                  ? 'bg-blue-700/50 border-blue-500/30 hover:bg-blue-700' 
                                                                   : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                                                               }`}>
-                                                                <div className={`p-1.5 rounded-lg ${isMe ? 'bg-white/20' : 'bg-white dark:bg-gray-800 text-primary-600'}`}>
+                                                                <div className={`p-1.5 rounded-lg ${isMe ? 'bg-white/20' : 'bg-white dark:bg-gray-800 text-premium-royal'}`}>
                                                                     <FileText className="w-4 h-4" />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0 pr-2">
                                                                     <p className="text-xs font-bold truncate">Attachment</p>
-                                                                    <p className={`text-[10px] ${isMe ? 'text-primary-100' : 'text-gray-500'}`}>Click to download</p>
+                                                                    <p className={`text-[10px] ${isMe ? 'text-blue-100' : 'text-gray-500'}`}>Click to download</p>
                                                                 </div>
-                                                                <Download className={`w-4 h-4 ${isMe ? 'text-primary-100' : 'text-gray-400'}`} />
+                                                                <Download className={`w-4 h-4 ${isMe ? 'text-blue-100' : 'text-gray-400'}`} />
                                                             </a>
                                                         )}
                                                         <p className="whitespace-pre-wrap">{msg.text}</p>
-                                                        <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-primary-100' : 'text-gray-400'}`}>
+                                                        <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
                                                           {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                         </p>
                                                     </div>
@@ -485,11 +502,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         onChange={(e) => setChatInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSendAdminMessage()}
                                         placeholder="Type your reply..."
-                                        className="flex-1 bg-gray-100 dark:bg-gray-700 border-none rounded-full px-4 focus:ring-2 focus:ring-primary-500 text-gray-900 dark:text-gray-100"
+                                        className="flex-1 bg-gray-100 dark:bg-gray-700 border-none rounded-full px-4 focus:ring-2 focus:ring-premium-royal text-gray-900 dark:text-gray-100"
                                     />
                                     <button 
                                       onClick={handleSendAdminMessage}
-                                      className="p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors"
+                                      className="p-2 bg-gradient-to-r from-premium-royal to-premium-indigo text-white rounded-full hover:shadow-[0_0_15px_rgba(6,214,160,0.5)] transition-all"
                                     >
                                         <Send className="w-5 h-5" />
                                     </button>
@@ -590,7 +607,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             type="text" 
                             value={tempAppName} 
                             onChange={(e) => setTempAppName(e.target.value)}
-                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-premium-royal focus:border-premium-royal sm:text-sm transition-colors"
                             placeholder="My Awesome Marketplace"
                         />
                         </div>
@@ -599,35 +616,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     <div className="grid grid-cols-2 gap-6">
                         <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Color</label>
-                        <div className="flex items-center gap-3">
-                            <input 
-                                type="color" 
-                                value={primaryColor} 
-                                onChange={(e) => setPrimaryColor(e.target.value)}
-                                className="h-10 w-20 p-1 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                            />
-                            <span className="text-sm text-gray-500 font-mono">{primaryColor}</span>
-                        </div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Color</label>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="color" 
+                                    value={primaryColor} 
+                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    className="h-10 w-20 p-1 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                                />
+                                <span className="text-sm text-gray-500 font-mono">{primaryColor}</span>
+                            </div>
                         </div>
                         <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Secondary Color</label>
-                        <div className="flex items-center gap-3">
-                            <input 
-                                type="color" 
-                                value={secondaryColor} 
-                                onChange={(e) => setSecondaryColor(e.target.value)}
-                                className="h-10 w-20 p-1 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                            />
-                            <span className="text-sm text-gray-500 font-mono">{secondaryColor}</span>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Secondary Color</label>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="color" 
+                                    value={secondaryColor} 
+                                    onChange={(e) => setSecondaryColor(e.target.value)}
+                                    className="h-10 w-20 p-1 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                                />
+                                <span className="text-sm text-gray-500 font-mono">{secondaryColor}</span>
+                            </div>
                         </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Border Color</label>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="color" 
+                                    value={borderColor} 
+                                    onChange={(e) => setBorderColor(e.target.value)}
+                                    className="h-10 w-20 p-1 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                                />
+                                <span className="text-sm text-gray-500 font-mono">{borderColor}</span>
+                            </div>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Background</label>
+                            <div className="flex items-center gap-3">
+                                <input 
+                                    type="color" 
+                                    value={cardBgColor} 
+                                    onChange={(e) => setCardBgColor(e.target.value)}
+                                    className="h-10 w-20 p-1 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                                />
+                                <span className="text-sm text-gray-500 font-mono">{cardBgColor}</span>
+                            </div>
                         </div>
                     </div>
 
                     <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
                         <button 
                         onClick={handleUpdateSettings}
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-lg text-sm font-bold text-white bg-gradient-to-r from-premium-royal to-premium-indigo hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-premium-royal transition-all"
                         >
                         Save Changes
                         </button>
@@ -673,7 +714,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div>
                             <p className="text-xs text-gray-500 uppercase mb-1">Service</p>
                             <h4 className="font-bold text-gray-900 dark:text-white">{selectedOrder.serviceTitle}</h4>
-                            <p className="text-primary-600 font-bold mt-1">${selectedOrder.price}</p>
+                            <p className="text-premium-royal font-bold mt-1">${selectedOrder.price}</p>
                         </div>
                     </div>
 
@@ -715,13 +756,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="p-6 bg-gray-50 dark:bg-gray-700/30 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
                      <button 
                         onClick={() => { onUpdateOrder(selectedOrder.id, 'cancelled'); setSelectedOrder(null); }}
-                        className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+                        className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-full font-medium transition-colors"
                      >
                         Cancel Order
                      </button>
                      <button 
                         onClick={() => { onUpdateOrder(selectedOrder.id, 'completed', 'http://files.com/delivery.zip'); setSelectedOrder(null); }}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg font-medium transition-colors shadow-lg shadow-green-500/20"
+                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-full font-medium transition-colors shadow-lg shadow-green-500/20"
                      >
                         Mark Completed
                      </button>

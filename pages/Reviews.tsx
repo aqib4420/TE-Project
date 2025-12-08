@@ -70,7 +70,7 @@ export const Reviews: React.FC<ReviewsPageProps> = ({ user, reviews, onAddReview
                         </div>
                     </div>
                     <p className="text-theme-muted leading-relaxed mb-4">"{review.comment}"</p>
-                    <div className="flex items-center gap-2 text-xs text-theme-muted cursor-pointer hover:text-primary-600">
+                    <div className="flex items-center gap-2 text-xs text-theme-muted cursor-pointer hover:text-premium-royal">
                         <ThumbsUp className="w-4 h-4" /> Helpful
                     </div>
                 </div>
@@ -113,13 +113,13 @@ export const Reviews: React.FC<ReviewsPageProps> = ({ user, reviews, onAddReview
                                 required
                                 rows={4}
                                 placeholder="Tell us about your experience..."
-                                className="w-full px-4 py-3 bg-theme-input text-theme-text border border-theme-border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none"
+                                className="w-full px-4 py-3 bg-theme-input text-theme-text border border-theme-border rounded-xl focus:ring-2 focus:ring-premium-royal focus:border-transparent outline-none resize-none"
                             ></textarea>
                         </div>
 
                         <button 
                             type="submit"
-                            className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/30"
+                            className="w-full bg-gradient-to-r from-premium-royal to-premium-indigo text-white font-bold py-3 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all shadow-lg"
                         >
                             Submit Review
                         </button>
@@ -130,7 +130,7 @@ export const Reviews: React.FC<ReviewsPageProps> = ({ user, reviews, onAddReview
                              <UserIcon className="w-8 h-8 text-gray-400" />
                          </div>
                          <p className="text-theme-muted mb-4">Please log in to submit a review.</p>
-                         <a href="/login" className="block w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
+                         <a href="/login" className="block w-full bg-gradient-to-r from-premium-royal to-premium-indigo text-white font-bold py-3 rounded-full hover:shadow-[0_0_20px_rgba(6,214,160,0.5)] transition-all text-center">
                              Log In / Register
                          </a>
                      </div>
