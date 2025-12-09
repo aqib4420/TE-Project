@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Sun, Moon, LayoutDashboard, Settings } from 'lucide-react';
+import { Menu, X, LogOut, Mail, Phone, MapPin, Facebook, Instagram, Sun, Moon, LayoutDashboard, Settings, MessageCircle } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface LayoutProps {
@@ -253,10 +253,30 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, notifi
                 Your one-stop destination for expert digital services. High-quality work, delivered on time.
               </p>
               <div className="flex gap-4">
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"><Facebook className="w-4 h-4" /></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"><Twitter className="w-4 h-4" /></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"><Instagram className="w-4 h-4" /></a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"><Linkedin className="w-4 h-4" /></a>
+                <a 
+                  href="https://www.facebook.com/share/1FXQ7o2avS/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"
+                >
+                  <Facebook className="w-4 h-4" />
+                </a>
+                <a 
+                  href="https://www.instagram.com/techr_each?igsh=MmpveHZ2aHhwcGo3" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a 
+                  href="https://whatsapp.com/channel/0029Vb75DdLCXC3N2LEdye1O" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-premium-royal transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </a>
               </div>
             </div>
             

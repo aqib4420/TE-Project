@@ -1,3 +1,4 @@
+
 import { Category, Service, SiteReview } from './types';
 
 export const APP_NAME = "TeachReach";
@@ -9,7 +10,7 @@ export const MOCK_SERVICES: Service[] = [
     title: "Professional Logo Design & Branding Kit",
     description: "I will design a modern, minimalist logo and complete branding kit for your startup.",
     fullDescription: "Get a complete brand identity overhaul directly from me. This package includes a main logo, secondary logo, color palette, typography selection, and brand guidelines. I specialize in minimalist and modern designs that stand the test of time.",
-    price: 150,
+    price: 30,
     rating: 4.9,
     reviewCount: 128,
     image: "https://picsum.photos/seed/design1/800/600",
@@ -26,7 +27,7 @@ export const MOCK_SERVICES: Service[] = [
     title: "Full Stack React & Node.js Application",
     description: "I will build a scalable, high-performance web application using React, TypeScript, and Node.js.",
     fullDescription: "Need a custom SaaS platform or an internal tool? I provide end-to-end development services. From database design with PostgreSQL to a responsive React frontend with Tailwind CSS. Includes deployment setup.",
-    price: 1200,
+    price: 150,
     rating: 5.0,
     reviewCount: 45,
     image: "https://picsum.photos/seed/code2/800/600",
@@ -42,7 +43,7 @@ export const MOCK_SERVICES: Service[] = [
     title: "SEO Optimized Blog Content Writing",
     description: "I will write engaging, SEO-optimized blog posts to drive traffic to your website.",
     fullDescription: "High-quality content is king. I will research your niche and write compelling articles that rank on Google. Includes keyword research, meta descriptions, and royalty-free images.",
-    price: 80,
+    price: 100,
     rating: 4.8,
     reviewCount: 310,
     image: "https://picsum.photos/seed/write3/800/600",
@@ -56,7 +57,7 @@ export const MOCK_SERVICES: Service[] = [
     title: "Social Media Marketing Strategy",
     description: "I will create a comprehensive social media strategy to grow your audience.",
     fullDescription: "Stop guessing and start growing. I will audit your current accounts, identify your target audience, and create a 30-day content calendar tailored to your brand voice.",
-    price: 200,
+    price: 45,
     rating: 4.7,
     reviewCount: 89,
     image: "https://picsum.photos/seed/mark4/800/600",
@@ -70,7 +71,7 @@ export const MOCK_SERVICES: Service[] = [
     title: "Explainer Video Animation",
     description: "I will create a 2D animated explainer video to showcase your product.",
     fullDescription: "Engage your customers with a fun and informative animated video. I handle everything from scriptwriting (optional) to voiceover and animation.",
-    price: 350,
+    price: 60,
     rating: 4.9,
     reviewCount: 56,
     image: "https://picsum.photos/seed/video5/800/600",
@@ -84,7 +85,7 @@ export const MOCK_SERVICES: Service[] = [
     title: "Mobile App UI/UX Design",
     description: "I will design a user-friendly and beautiful mobile app interface for iOS and Android.",
     fullDescription: "I focus on usability and aesthetics. You will receive Figma files ready for development, including all assets and a clickable prototype to test user flows.",
-    price: 400,
+    price: 80,
     rating: 5.0,
     reviewCount: 22,
     image: "https://picsum.photos/seed/ui6/800/600",
