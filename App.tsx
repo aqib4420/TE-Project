@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { MemoryRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { MemoryRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Services } from './pages/Services';
@@ -90,7 +91,8 @@ const ForgotPasswordModal = ({ onClose }: { onClose: () => void }) => {
 
 // Auth Component
 const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => Promise<string | void> }) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(location.pathname === '/login');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -100,6 +102,11 @@ const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => Promise
     phone: '',
     password: ''
   });
+
+  useEffect(() => {
+    setIsLogin(location.pathname === '/login');
+    setLoginError('');
+  }, [location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,7 +262,11 @@ const AuthPage = ({ onAuth }: { onAuth: (data: any, isLogin: boolean) => Promise
           <div className="flex items-center justify-center pt-2">
             <button 
               type="button"
-              onClick={() => { setIsLogin(!isLogin); setLoginError(''); }}
+              onClick={() => { 
+                setIsLogin(!isLogin); 
+                setLoginError('');
+                // Note: The parent component handles routing, so we rely on useNavigate/Link elsewhere or this toggle for simpler usage
+              }}
               className="text-sm font-medium text-theme-muted hover:text-premium-royal transition-colors"
             >
               {isLogin ? (
@@ -287,6 +298,8 @@ const AppContent = () => {
   // Verification State
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
+  const [demoOtp, setDemoOtp] = useState('');
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -294,34 +307,56 @@ const AppContent = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
-            // User is signed in, fetch profile from Firestore
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            
-            if (userDoc.exists()) {
-                const userData = userDoc.data() as User;
-                // Enforce Admin Role Rule for specific email even if Firestore is outdated
-                if (firebaseUser.email === ADMIN_EMAIL && userData.role !== 'admin') {
-                   userData.role = 'admin';
+            try {
+                // User is signed in, fetch profile from Firestore
+                const userDocRef = doc(db, 'users', firebaseUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data() as User;
+                    // Enforce Admin Role Rule for specific email even if Firestore is outdated
+                    if (firebaseUser.email === ADMIN_EMAIL && userData.role !== 'admin') {
+                       userData.role = 'admin';
+                    }
+                    
+                    // Update verification status from Firebase Auth object
+                    const isEmailVerified = firebaseUser.emailVerified;
+                    
+                    // Merge Firebase Auth state with Firestore data
+                    const mergedUser = { 
+                        ...userData, 
+                        isVerified: isEmailVerified || userData.isVerified,
+                    };
+                    
+                    setUser(mergedUser);
+                } else {
+                   // Fallback if doc doesn't exist but auth does
+                   setUser({
+                       id: firebaseUser.uid,
+                       name: firebaseUser.displayName || 'User',
+                       email: firebaseUser.email || '',
+                       avatar: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+                       role: firebaseUser.email === ADMIN_EMAIL ? 'admin' : 'client',
+                       isVerified: firebaseUser.emailVerified
+                   });
                 }
-                
-                // Update verification status from Firebase Auth object
-                const isEmailVerified = firebaseUser.emailVerified;
-                
-                // Merge Firebase Auth state with Firestore data
-                const mergedUser = { 
-                    ...userData, 
-                    isVerified: isEmailVerified,
-                    // If we use OTP modal, we rely on our custom field, 
-                    // if we use Firebase Link, we rely on emailVerified
-                };
-                
-                setUser(mergedUser);
+            } catch (error) {
+                console.error("Error fetching user profile (offline?):", error);
+                // Fallback for offline mode if Auth is cached but Firestore fails
+                setUser({
+                   id: firebaseUser.uid,
+                   name: firebaseUser.displayName || 'User (Offline)',
+                   email: firebaseUser.email || '',
+                   avatar: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/100/100`,
+                   role: firebaseUser.email === ADMIN_EMAIL ? 'admin' : 'client',
+                   isVerified: firebaseUser.emailVerified
+                });
             }
         } else {
             // User is signed out
             setUser(null);
         }
+        setInitialLoading(false);
     });
 
     return () => unsubscribe();
@@ -335,28 +370,28 @@ const AppContent = () => {
           const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
           // Client only sees their own orders, Admin sees all
           setOrders(fetchedOrders);
-      });
+      }, (error) => console.log("Orders sync error:", error));
 
       // Listen for Messages
       const qMsgs = query(collection(db, "messages"));
       const unsubscribeMessages = onSnapshot(qMsgs, (snapshot) => {
           const fetchedMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DirectMessage));
           setMessages(fetchedMessages);
-      });
+      }, (error) => console.log("Messages sync error:", error));
 
       // Listen for Reviews
       const qReviews = query(collection(db, "reviews"));
       const unsubscribeReviews = onSnapshot(qReviews, (snapshot) => {
           const fetchedReviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SiteReview));
           setSiteReviews(fetchedReviews);
-      });
+      }, (error) => console.log("Reviews sync error:", error));
       
       // Listen for Users (For Admin Panel)
       const qUsers = query(collection(db, "users"));
       const unsubscribeUsers = onSnapshot(qUsers, (snapshot) => {
           const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
           setRegisteredUsers(fetchedUsers);
-      });
+      }, (error) => console.log("Users sync error:", error));
 
       return () => {
           unsubscribeOrders();
@@ -380,8 +415,8 @@ const AppContent = () => {
         if (isLogin) {
             // FIREBASE SIGN IN
             await signInWithEmailAndPassword(auth, data.email, data.password);
-            // onAuthStateChanged will handle the redirect and state update
-            // We can return void if successful
+            // Optimistically update UI to avoid race condition delay
+            // Listener will conform this shortly
             return;
         } else {
             // FIREBASE SIGN UP
@@ -405,14 +440,26 @@ const AppContent = () => {
             };
 
             // Save extended profile to Firestore
-            await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+            try {
+                await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+            } catch (e) {
+                console.error("Failed to save user profile to DB:", e);
+                // Continue flow even if profile save fails (auth worked)
+            }
             
+            // Optimistic update for instant feedback
+            setUser(newUser);
+
             setPendingVerificationEmail(newUser.email);
+            setDemoOtp(otp);
             setShowVerifyModal(true);
             
-            // Optionally send Firebase Email Verification
-            // await sendEmailVerification(firebaseUser);
-            alert(`Verification Code: ${otp}`);
+            // Navigate to Dashboard (with Verify Modal Overlay) so user feels "Logged In"
+            if (role === 'admin') {
+                navigate('/admin-dashboard');
+            } else {
+                navigate('/dashboard');
+            }
         }
     } catch (error: any) {
         console.error("Firebase Auth Error:", error);
@@ -427,9 +474,6 @@ const AppContent = () => {
 
   const handleVerify = async (code: string) => {
       // Find the user document corresponding to pending email
-      // Since we need the UID to update firestore, we rely on the currently logged in firebase user 
-      // OR query firestore by email
-      
       const q = query(collection(db, "users"), where("email", "==", pendingVerificationEmail));
       const querySnapshot = await getDocs(q);
       
@@ -460,7 +504,6 @@ const AppContent = () => {
   };
 
   const handleResendCode = async () => {
-      // Logic to update code in firestore
       const newCode = Math.floor(1000 + Math.random() * 9000).toString();
       const q = query(collection(db, "users"), where("email", "==", pendingVerificationEmail));
       const querySnapshot = await getDocs(q);
@@ -468,18 +511,13 @@ const AppContent = () => {
       if (!querySnapshot.empty) {
           const userDoc = querySnapshot.docs[0];
           await updateDoc(doc(db, "users", userDoc.id), { verificationCode: newCode });
-          console.log(`Resent Code: ${newCode}`);
-          alert(`New code sent to ${pendingVerificationEmail}: ${newCode}`);
+          setDemoOtp(newCode);
       }
   };
 
   const handleUpdateProfile = async (updatedData: Partial<User>) => {
       if (!user) return;
-      
-      // Update Firestore
       await updateDoc(doc(db, "users", user.id), updatedData);
-      
-      // Update Local State
       setUser({ ...user, ...updatedData });
   };
 
@@ -492,21 +530,16 @@ const AppContent = () => {
       }
 
       try {
-          // Cascade Delete Logic:
-          // 1. Delete User Doc
           await deleteDoc(doc(db, "users", user.id));
           
-          // 2. Delete Messages (Query and delete)
           const msgsQ = query(collection(db, "messages"), where("senderId", "==", user.id));
           const msgsSnapshot = await getDocs(msgsQ);
           msgsSnapshot.forEach(async (doc) => await deleteDoc(doc.ref));
 
-          // 3. Delete Reviews
           const reviewsQ = query(collection(db, "reviews"), where("userId", "==", user.id));
           const reviewsSnapshot = await getDocs(reviewsQ);
           reviewsSnapshot.forEach(async (doc) => await deleteDoc(doc.ref));
 
-          // 4. Firebase Auth Delete
           const firebaseUser = auth.currentUser;
           if (firebaseUser) {
               await firebaseUser.delete();
@@ -540,7 +573,6 @@ const AppContent = () => {
             date: new Date().toLocaleDateString(),
             clientName: `${checkoutData.firstName} ${checkoutData.lastName}`,
             clientId: user.id,
-            // Extra checkout data
             email: checkoutData.email,
             address: checkoutData.address,
             city: checkoutData.city,
@@ -563,16 +595,12 @@ const AppContent = () => {
   };
 
   const handleUpdateOrder = async (id: string, status: Order['status'], deliverables?: string) => {
-    // Update Firestore
     const orderRef = doc(db, "orders", id);
     await updateDoc(orderRef, { status, deliverables });
   };
   
-  // Message Handling
   const handleSendMessage = async (text: string, attachment?: string) => {
     if (!user) return;
-    
-    // Find Admin ID (fallback to 'admin' string or fetch actual admin UID)
     const adminUser = registeredUsers.find(u => u.role === 'admin' || u.email === ADMIN_EMAIL);
     const receiverId = adminUser ? adminUser.id : 'admin_placeholder';
 
@@ -582,12 +610,11 @@ const AppContent = () => {
         receiverId: receiverId, 
         text,
         attachment: attachment || null,
-        timestamp: new Date().toISOString(), // Use ISO string for Firestore
+        timestamp: new Date().toISOString(),
         isRead: false
     });
   };
 
-  // Admin sending message
   const handleAdminSendMessage = async (receiverId: string, text: string, attachment?: string) => {
       if (!user) return;
       await addDoc(collection(db, "messages"), {
@@ -603,16 +630,12 @@ const AppContent = () => {
 
   const handleMarkAsRead = async (senderId: string) => {
       if (!user) return;
-      // Find messages to update
-      // Firestore batch update would be better, but doing client-side filter for simplicity
       const unreadMsgs = messages.filter(m => m.senderId === senderId && m.receiverId === user.id && !m.isRead);
-      
       unreadMsgs.forEach(async (msg) => {
           await updateDoc(doc(db, "messages", msg.id), { isRead: true });
       });
   };
 
-  // Review Handling
   const handleAddReview = async (rating: number, comment: string) => {
       if(!user) return;
       await addDoc(collection(db, "reviews"), {
@@ -629,8 +652,18 @@ const AppContent = () => {
       await deleteDoc(doc(db, "reviews", id));
   };
 
-  // Notification counts
   const notificationCount = orders.filter(o => o.status === 'active').length + unreadMessagesCount;
+
+  if (initialLoading) {
+     return (
+        <div className="min-h-screen flex items-center justify-center bg-theme-main">
+            <div className="text-center">
+                <div className="w-16 h-16 border-4 border-primary-200 border-t-premium-royal rounded-full animate-spin mx-auto mb-4"></div>
+                <h2 className="text-xl font-bold text-theme-text">Loading {siteName}...</h2>
+            </div>
+        </div>
+     );
+  }
 
   return (
     <>
@@ -647,7 +680,6 @@ const AppContent = () => {
           <Route path="/service/:id" element={<ServiceDetail user={user} onOrder={handleOrder} />} />
           <Route path="/reviews" element={<Reviews user={user} reviews={siteReviews} onAddReview={handleAddReview} />} />
           
-          {/* USER SETTINGS */}
           <Route 
              path="/settings" 
              element={
@@ -663,13 +695,11 @@ const AppContent = () => {
              } 
           />
           
-          {/* CLIENT DASHBOARD - Protected */}
           <Route 
             path="/dashboard" 
             element={user ? <Dashboard user={user} orders={orders.filter(o => user.role === 'client' ? o.clientId === user.id : true)} /> : <Navigate to="/login" />} 
           />
 
-          {/* ADMIN DASHBOARD - Strictly Protected */}
           <Route 
             path="/admin-dashboard" 
             element={
@@ -697,8 +727,14 @@ const AppContent = () => {
             } 
           />
           
-          <Route path="/login" element={<AuthPage onAuth={handleAuth} />} />
-          <Route path="/register" element={<AuthPage onAuth={handleAuth} />} />
+          <Route 
+            path="/login" 
+            element={user ? <Navigate to={user.role === 'admin' ? "/admin-dashboard" : "/dashboard"} /> : <AuthPage onAuth={handleAuth} />} 
+          />
+          <Route 
+            path="/register" 
+            element={user ? <Navigate to={user.role === 'admin' ? "/admin-dashboard" : "/dashboard"} /> : <AuthPage onAuth={handleAuth} />} 
+          />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
@@ -706,6 +742,7 @@ const AppContent = () => {
       {showVerifyModal && (
           <VerificationModal 
              email={pendingVerificationEmail} 
+             demoCode={demoOtp}
              onVerify={handleVerify} 
              onResend={handleResendCode} 
              onClose={() => setShowVerifyModal(false)}
