@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TeachReach - Expert Services</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -23,16 +24,15 @@
               primary: {
                 50: '#eff6ff',
                 100: '#dbeafe',
-                500: 'var(--color-primary-500)', // Dynamic
-                600: 'var(--color-primary-600)', // Dynamic
+                500: 'var(--color-primary-500)',
+                600: 'var(--color-primary-600)',
                 700: '#1d4ed8',
                 900: '#1e3a8a',
               },
               secondary: {
-                500: 'var(--color-secondary-500)', // Dynamic
-                600: 'var(--color-secondary-600)', // Dynamic
+                500: 'var(--color-secondary-500)',
+                600: 'var(--color-secondary-600)',
               },
-              // Semantic Theme Colors
               theme: {
                 main: 'var(--bg-main)',
                 card: 'var(--bg-card)',
@@ -45,6 +45,9 @@
             animation: {
               'blob': 'blob 7s infinite',
               'glow': 'glow 2s ease-in-out infinite alternate',
+              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+              'fadeIn': 'fadeIn 0.2s ease-out forwards',
+              'gradient': 'gradient 8s ease infinite',
             },
             keyframes: {
               blob: {
@@ -56,6 +59,18 @@
               glow: {
                 'from': { boxShadow: '0 0 10px #06D6A0' },
                 'to': { boxShadow: '0 0 20px #06D6A0, 0 0 10px #3B82F6' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              gradient: {
+                '0%, 100%': { backgroundPosition: '0% 50%' },
+                '50%': { backgroundPosition: '100% 50%' },
               }
             }
           }
@@ -79,14 +94,14 @@
         --glass-bg: rgba(255, 255, 255, 0.7);
         --glass-border: rgba(255, 255, 255, 0.18);
       }
-      
+
       [data-theme='dark'] {
-        --bg-main: #0f172a; /* Slate 900 */
-        --bg-card: #1e293b; /* Slate 800 */
-        --bg-input: #334155; /* Slate 700 */
-        --text-main: #f8fafc; /* Slate 50 */
-        --text-muted: #94a3b8; /* Slate 400 */
-        --border-color: #334155; /* Slate 700 */
+        --bg-main: #0f172a;
+        --bg-card: #1e293b;
+        --bg-input: #334155;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
         --glass-bg: rgba(15, 23, 42, 0.7);
         --glass-border: rgba(255, 255, 255, 0.05);
       }
@@ -105,47 +120,32 @@
         border: 1px solid var(--glass-border);
       }
       
-      /* Smooth transition for all theme colors */
-      *, *::before, *::after {
-        transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 200ms;
-      }
-
-      /* Custom scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: var(--bg-main); 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #9ca3af; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #6b7280; 
-      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: var(--bg-main); }
+      ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
     "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.87.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
+    
